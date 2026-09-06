@@ -141,8 +141,12 @@ face-id-blockchain/
 │   ├── input/
 │   └── candidates/
 │
+├── contracts/
+│   └── VerificationRegistry.sol
+│
 ├── scripts/
-│   └── test_search.py
+│   ├── test_search.py
+│   └── test_blockchain.py
 │
 ├── src/
 │   ├── __init__.py
@@ -150,24 +154,41 @@ face-id-blockchain/
 │   │   ├── __init__.py
 │   │   └── candidate.py
 │   │
-│   └── search/
+│   ├── search/
+│   │   ├── __init__.py
+│   │   ├── serpapi_client.py
+│   │   ├── parser.py
+│   │   ├── image_utils.py
+│   │   └── retriever.py
+│   │
+│   ├── verification/
+│   │   ├── __init__.py
+│   │   ├── canonicalizer.py
+│   │   ├── hasher.py
+│   │   └── verifier.py
+│   │
+│   └── blockchain/
 │       ├── __init__.py
-│       ├── serpapi_client.py
-│       ├── parser.py
-│       ├── image_utils.py
-│       └── retriever.py
+│       ├── provider.py
+│       └── client.py
 │
 └── tests/
     ├── test_image_utils.py
-    └── test_parser.py
+    ├── test_parser.py
+    ├── test_canonicalizer.py
+    ├── test_hasher.py
+    └── test_blockchain_verification.py
 ```
 
-The structure can be expanded as the face, matching, verification, and blockchain modules are implemented. Do not create files merely to match a diagram.
+The structure can be expanded as the face and matching modules are implemented. Do not create files merely to match a diagram.
 
 ## 4. Component Responsibilities
 
 ### `scripts/test_search.py`
 Current development entry point for testing the reverse-image-search flow.
+
+### `scripts/test_blockchain.py`
+Integration script for testing the Person 3 blockchain recording, verification, and tamper detection workflow.
 
 ### `src/models/candidate.py`
 Defines the normalized `Candidate` structure used between search/retrieval and matching.
@@ -184,20 +205,30 @@ Handles HTTP image retrieval, Pillow validation, JPEG normalization, and main-im
 ### `src/search/retriever.py`
 Handles candidate image downloads, retrieval metadata, local paths, and `candidates.json`.
 
+### `src/verification/canonicalizer.py`
+Handles key-sorted, compact JSON canonicalization for deterministic payload hashing.
+
+### `src/verification/hasher.py`
+Handles SHA-256 fingerprint generation (`0x...` EVM `bytes32` format).
+
+### `src/verification/verifier.py`
+Handles local hash re-computation, on-chain record retrieval, hash comparison, and tamper detection.
+
+### `src/blockchain/provider.py`
+Provides dual-mode architecture: zero-dependency `LocalBlockchainProvider` and Web3 RPC `Web3BlockchainProvider`.
+
+### `src/blockchain/client.py`
+High-level client interface for recording and querying verification records on-chain.
+
+### `contracts/VerificationRegistry.sol`
+Solidity smart contract storing SHA-256 content hashes, URLs, platforms, timestamps, and recorder addresses.
+
 ### Future `face/`
 Will handle image loading, face detection, and face embeddings.
 
 ### Future `matching/`
 Will handle candidate face extraction, similarity calculation, ranking, and selection.
 
-### Future `verification/`
-Will handle canonical data construction, SHA-256 generation, and local verification.
-
-### Future `blockchain/`
-Will handle RPC connection, contract interaction, record storage/retrieval, and on-chain verification.
-
-### Future `contracts/`
-Will contain the minimal registry contract.
 
 ## 5. Data Flow
 
