@@ -1,7 +1,14 @@
 import sys
 import json
+from pathlib import Path
+
+# Add project root to sys.path
+root_dir = Path(__file__).resolve().parent.parent
+if str(root_dir) not in sys.path:
+    sys.path.insert(0, str(root_dir))
 
 from src.search.parser import parse_visual_matches
+
 from src.search.serpapi_client import (
     upload_image,
     google_lens_search,

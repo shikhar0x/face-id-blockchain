@@ -1,3 +1,6 @@
 requests
 Pillow
 python-dotenv
+web3
+pytest
+
