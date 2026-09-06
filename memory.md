@@ -8,15 +8,16 @@
 
 **Project:** HH Goa 2026 — Task 3: Face Identification & Blockchain Verification
 
-**Overall status:** Phase 0 is in progress at the team level. Person 2's reverse-image-search setup and core retrieval work are substantially complete; Person 1 and Person 3 still have Phase 0 responsibilities to finish.
+**Overall status:** Person 2 (Search) and Person 3 (Blockchain & Verification) modules are fully completed and tested. Waiting on Person 1 (Face Processing & Matching) to finalize end-to-end pipeline integration.
 
-**Last updated:** 2026-09-04
+**Last updated:** 2026-09-06
 
 ## Current File Being Worked On
 
-**Current focus:** Person 2 — reverse-image search and candidate retrieval.
+**Current focus:** Person 3 — Blockchain & Verification module completed.
 
-**Active implementation area:** `src/search/`
+**Active implementation area:** `src/verification/` and `src/blockchain/`
+
 
 ## Repository State
 
@@ -207,14 +208,15 @@ Do not rely on a manually preselected social-media URL.
 - [ ] Connect the search output directly to Person 1's matcher.
 
 ### Person 3 — Blockchain
-- [ ] Choose final blockchain/network.
-- [ ] Implement smart contract.
-- [ ] Deploy contract.
-- [ ] Implement Web3 client.
-- [ ] Implement deterministic canonicalization.
-- [ ] Implement SHA-256 hashing.
-- [ ] Implement on-chain verification.
-- [ ] Add tamper test.
+- [x] Choose final blockchain/network (Dual-mode: zero-dependency Local EVM simulator + Web3 RPC client).
+- [x] Implement smart contract (`contracts/VerificationRegistry.sol`).
+- [x] Deploy contract / contract provider interface.
+- [x] Implement Web3 client (`src/blockchain/client.py`).
+- [x] Implement deterministic canonicalization (`src/verification/canonicalizer.py`).
+- [x] Implement SHA-256 hashing (`src/verification/hasher.py`).
+- [x] Implement on-chain verification (`src/verification/verifier.py`).
+- [x] Add tamper test (`scripts/test_blockchain.py` & `tests/test_blockchain_verification.py`).
+
 
 ### Integration
 - [ ] Finalize module interfaces with all three people.
@@ -342,3 +344,52 @@ Do not delete historical updates unless the file becomes excessively large.
 - Add the updated project documentation to the local repository.
 - Push the clean repository to GitHub.
 - Coordinate the Person 2 → Person 1 handoff.
+
+## Update — 2026-09-06 18:38
+
+### Completed
+- Completed Person 3 — Blockchain & Verification module end-to-end.
+- Created `contracts/VerificationRegistry.sol` Solidity contract for on-chain fingerprint recording and verification.
+- Implemented `src/verification/canonicalizer.py` for deterministic JSON canonicalization.
+- Implemented `src/verification/hasher.py` for SHA-256 fingerprinting (`0x...` 64 hex chars format).
+- Implemented `src/blockchain/provider.py` with dual-mode architecture: zero-dependency `LocalBlockchainProvider` for offline testing/demos and `Web3BlockchainProvider` for live EVM RPC endpoints.
+- Implemented `src/blockchain/client.py` for high-level Web3 and local blockchain interaction.
+- Implemented `src/verification/verifier.py` for on-chain lookup, hash re-computation, and tamper detection.
+- Added runnable integration script `scripts/test_blockchain.py`.
+- Added unit tests in `tests/test_canonicalizer.py`, `tests/test_hasher.py`, and `tests/test_blockchain_verification.py`.
+
+### Currently Working On
+- Ready for Person 1 integration and final pipeline orchestration (`main.py`).
+
+### Files Changed
+- `contracts/VerificationRegistry.sol`
+- `src/verification/__init__.py`
+- `src/verification/canonicalizer.py`
+- `src/verification/hasher.py`
+- `src/verification/verifier.py`
+- `src/blockchain/__init__.py`
+- `src/blockchain/provider.py`
+- `src/blockchain/client.py`
+- `scripts/test_blockchain.py`
+- `tests/test_canonicalizer.py`
+- `tests/test_hasher.py`
+- `tests/test_blockchain_verification.py`
+- `requirements.txt`
+- `.env.example`
+- `memory.md`
+
+### Decisions
+- Dual-mode blockchain architecture: default to `LocalBlockchainProvider` (zero-dependency, instant, deterministic block & transaction generation) while supporting full `web3.py` RPC integration via `RPC_URL` in `.env`.
+- Canonicalization normalizes URLs, lowercases platform names, sorts dictionary keys, and rounds similarity floats to 6 decimal places.
+
+### Test / Evidence
+- `scripts/test_blockchain.py` executed cleanly with exit code 0.
+- All 8 unit tests in `tests/` passed (`python -m pytest tests/`).
+- Tamper detection correctly flagged altered content with `verified: False`.
+
+### Blockers
+- Person 1's face detection and matching module is still pending integration.
+
+### Next Action
+- Integrate Person 3's verification module into `main.py` when Person 1 completes candidate matching.
+
