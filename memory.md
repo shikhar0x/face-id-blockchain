@@ -193,10 +193,11 @@ Do not rely on a manually preselected social-media URL.
 ## Not Yet Completed
 
 ### Person 1 — Face Pipeline
-- [ ] Choose final face library.
-- [ ] Implement face detection.
-- [ ] Implement face encoding.
-- [ ] Add face-processing tests.
+- [x] Choose final face library (OpenCV YuNet + SFace; see 2026-09-09 update for rationale).
+- [x] Implement face detection (`src/face/detector.py`).
+- [x] Implement face encoding (`src/face/embedder.py`, 128-d L2-normalized).
+- [x] Implement candidate matching/ranking/thresholding (`src/matching/`).
+- [x] Add face-processing tests (incl. offline integration + real-model tests).
 
 ### Person 2 — Remaining Search Work
 - [ ] Test with the final consenting/public demo subject.
@@ -392,4 +393,56 @@ Do not delete historical updates unless the file becomes excessively large.
 
 ### Next Action
 - Integrate Person 3's verification module into `main.py` when Person 1 completes candidate matching.
+
+## Update — 2026-09-09 15:30
+
+### Completed
+- Implemented Person 1 — Face Processing & Matching end-to-end.
+- Implemented YuNet face detection (`src/face/detector.py`) with full multi-face reporting.
+- Implemented SFace 128-d L2-normalized embeddings (`src/face/embedder.py`).
+- Implemented query/candidate processing with largest-area primary-face selection (`src/face/processor.py`).
+- Implemented cosine similarity + optional perceptual-hash secondary signal (`src/matching/similarity.py`).
+- Implemented candidate ranking, thresholding (default 0.5), best-match selection, no-match refusal (`src/matching/matcher.py`).
+- Implemented Person-3 `matched_result` conversion (`to_matched_result`).
+- Implemented end-to-end CLI `src/main.py` (8 steps, exit codes 0/2/3/4/1, `--candidates-json` quota-safe path).
+- Added `scripts/download_face_models.py` (SHA-256-verified model fetch) and `scripts/test_face.py` (isolated self-test).
+- Added 5 test files: similarity, processor, matcher, offline Person1→Person3 pipeline integration, real-model integration (skip-if-missing).
+- Updated `requirements.txt` (opencv-headless, numpy, ImageHash), `.env.example` (face vars), `.gitignore` (models/), `README.md` (full docs), `Architecture.md` (final face choice + structure).
+
+### Currently Working On
+- Final end-to-end testing / demo preparation (live run with consenting subject + screen recording).
+
+### Files Changed
+- `src/face/__init__.py`, `src/face/errors.py`, `src/face/models.py`, `src/face/detector.py`, `src/face/embedder.py`, `src/face/processor.py`
+- `src/matching/__init__.py`, `src/matching/similarity.py`, `src/matching/matcher.py`
+- `src/main.py`
+- `scripts/download_face_models.py`, `scripts/test_face.py`
+- `tests/test_similarity.py`, `tests/test_face_processor.py`, `tests/test_matcher.py`, `tests/test_pipeline_integration.py`, `tests/test_face_models_integration.py`
+- `tests/fixtures/` (single_face.jpg, group_faces.jpg, no_face.jpg — AI-generated, committed for offline tests)
+- `requirements.txt`, `.env.example`, `.gitignore`, `README.md`, `Architecture.md`, `memory.md`
+- Person 2/Person 3 source files: untouched (zero modifications).
+
+### Decisions
+- Face library: OpenCV YuNet (detection) + SFace (recognition) instead of InsightFace — InsightFace requires non-headless `opencv-python` (system libGL missing in minimal containers) and ~500MB+ deps; YuNet+SFace are established pretrained models, ~39MB, headless-clean.
+- Metric: cosine similarity on L2-normalized embeddings, range [-1, 1], higher = more similar.
+- Threshold: `FACE_MATCH_THRESHOLD=0.5` demo default (configurable via env/CLI); documented as needing calibration.
+- Query multi-face: largest-area primary (count + flag always reported). Candidate multi-face: max similarity over faces.
+- Embeddings live in memory only — never on-chain, never in JSON reports (privacy).
+- Model files auto-download with SHA-256 verification; `FACE_AUTO_DOWNLOAD=0` fails fast for offline/airgapped use.
+- `tests/fixtures/` images are AI-generated and committed (592KB) so offline tests use real image bytes.
+
+### Test / Evidence
+- `pytest tests/`: 48 passed, 5 skipped (real-model tests skip honestly when weights absent — sandbox TLS blocks github raw hosts).
+- `scripts/test_blockchain.py`: exit 0 (Person 3 regression green).
+- Throwaway stubbed-DNN E2E run of `src/main.py` (/tmp, not committed): all 8 steps → VERIFIED, exit 0; impossible-threshold run → honest NO VALID MATCH, exit 3.
+- CLI failure paths verified: missing file → exit 2; missing models → exit 2 with download instructions.
+- Fixture validity confirmed with real detection (Haar spot-check, test-only): single=1 face, group=multi, landscape=0.
+- Full `pip install -r requirements.txt` validated in a fresh venv (opencv 5.0 headless, numpy 2.4, web3 8.0).
+
+### Blockers
+- Sandbox network blocks github raw/media hosts (TLS EOF), so YuNet/SFace weights could not be downloaded here; real-model inference is therefore validated by code + skip-if-missing integration tests, not by a live run in this environment.
+- No SerpApi key in this environment; live search path untested here (cached-candidates path tested).
+
+### Next Action
+- On a networked machine: `pip install -r requirements.txt` → `python scripts/download_face_models.py` → `pytest tests/` (expect 53 passed, 0 skipped) → `python src/main.py --image <consenting-subject>.jpg` → screen recording → submission.
 

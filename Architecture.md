@@ -89,15 +89,14 @@ Current testing:
 - Direct social-platform crawler image URLs may return HTML redirects instead of image bytes, so retrieval validates the response as an actual image.
 
 ### Matching
-Possible components:
-- Face embeddings + cosine similarity
-- Perceptual image hashing
-- OpenCV/image comparison
-
-Preferred approach:
-`face embedding → candidate face embedding → cosine similarity`
-
-Use image-level similarity as a supporting signal when useful.
+Implemented (Person 1):
+- `query embedding → every candidate-face embedding → cosine similarity`,
+  candidate score = max over its faces.
+- Configurable threshold (`FACE_MATCH_THRESHOLD`, default 0.5); below
+  threshold = no valid match, honestly reported, never fabricated.
+- Query with several faces: largest-area face is primary (count preserved).
+- Optional perceptual-hash image signal (`--use-phash`, off by default)
+  that can support but never replace the face score.
 
 ### Blockchain
 Recommended architecture:
@@ -184,20 +183,30 @@ Handles HTTP image retrieval, Pillow validation, JPEG normalization, and main-im
 ### `src/search/retriever.py`
 Handles candidate image downloads, retrieval metadata, local paths, and `candidates.json`.
 
-### Future `face/`
-Will handle image loading, face detection, and face embeddings.
+### `src/main.py`
+End-to-end CLI: input image → face detection/embedding → reverse search →
+matching/ranking → best match → hash → blockchain record → verification.
+Exits non-zero with explicit reasons on every failure class.
 
-### Future `matching/`
-Will handle candidate face extraction, similarity calculation, ranking, and selection.
+### `src/face/`
+Image loading, YuNet face detection, SFace embeddings, query/candidate
+processing, largest-area primary-face selection, model download/verification.
 
-### Future `verification/`
-Will handle canonical data construction, SHA-256 generation, and local verification.
+### `src/matching/`
+Candidate face extraction (via `local_image_path`, no re-download), cosine
+similarity, per-candidate max-over-faces scoring, descending ranking,
+thresholding, best-match selection, Person-3 `matched_result` conversion.
 
-### Future `blockchain/`
-Will handle RPC connection, contract interaction, record storage/retrieval, and on-chain verification.
+### `src/verification/`
+Canonical data construction, SHA-256 generation, and local-vs-on-chain
+verification with tamper detection.
 
-### Future `contracts/`
-Will contain the minimal registry contract.
+### `src/blockchain/`
+RPC connection, contract interaction, record storage/retrieval, and on-chain
+verification (local simulator default, Web3 provider when configured).
+
+### `contracts/`
+Minimal `VerificationRegistry.sol` registry contract.
 
 ## 5. Data Flow
 

@@ -8,3 +8,7 @@ data/input/*
 data/candidates/*
 
 lens_results.json
+
+# Downloaded pretrained face models (see scripts/download_face_models.py)
+models/
+*.onnx

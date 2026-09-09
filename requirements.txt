@@ -3,4 +3,6 @@ Pillow
 python-dotenv
 web3
 pytest
-
+opencv-python-headless>=4.10.0.84
+numpy>=1.26
+ImageHash>=4.3.2
